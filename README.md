@@ -1,8 +1,8 @@
 # PharmaDrone — Prescription Upload & Drone Delivery
 
 **SIS 2075 — Software Engineering 1, Mini Project**
-**Company name:** _[fill in your team's chosen name]_
-**Team members:** _[Member A — pharmacy module] · [Member B — prescription module] · [Member C — order/drone module]_
+**Company name:** _PharmaDrone_
+**Team members:** _Ajlaan(pharmacy module) · Irshaad(prescription module) · Hemkesh(order/drone module)_
 
 A console application, written in C, that simulates:
 
@@ -30,9 +30,9 @@ pharmadrone/
 │   └── order.h
 ├── src/                Implementation files (.c)
 │   ├── utils.c          shared helpers (string trimming, timing)
-│   ├── pharmacy.c        [Member A] catalog & stock search
-│   ├── prescription.c    [Member B] prescription upload
-│   ├── order.c           [Member C] pharmacy selection + drone dispatch
+│   ├── pharmacy.c        [Ajlaan] catalog & stock search
+│   ├── prescription.c    [Irshaad] prescription upload
+│   ├── order.c           [Hemkesh] pharmacy selection + drone dispatch
 │   └── main.c            integration: top-level menu, wires modules together
 ├── tests/              Unit tests, one file per testable module
 │   ├── test_pharmacy.c
@@ -104,7 +104,7 @@ This section is both a **guide for the team** and the **basis for the Git/GitHub
 section of the report** — copy the relevant parts across and add your own
 screenshots/command history once you've actually done it.
 
-### 3.1 Initial setup (one team member)
+### 3.1 Initial setup (Joyven)
 
 ```bash
 git init
@@ -132,18 +132,18 @@ Rather than everyone committing straight to `main`, each member works on their
 own module in its own branch:
 
 ```bash
-# Member A
+# Ajlaan
 git checkout -b feature/pharmacy-module
 # ... work on include/pharmacy.h and src/pharmacy.c ...
 git add include/pharmacy.h src/pharmacy.c
 git commit -m "Improve stock search to handle partial name matches"
 git push -u origin feature/pharmacy-module
 
-# Member B
+# Irshaad
 git checkout -b feature/prescription-module
 # ... work on prescription.h / prescription.c ...
 
-# Member C
+# Hemkesh
 git checkout -b feature/order-module
 # ... work on order.h / order.c ...
 ```
