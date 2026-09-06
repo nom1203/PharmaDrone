@@ -1,266 +1,144 @@
-# PharmaDrone — Prescription Upload & Drone Delivery
+# PharmaDrone
 
-**SIS 2075 — Software Engineering 1, Mini Project**
-**Company name:** _PharmaDrone_
-**Team members:** _Ajlaan(pharmacy module) · Irshaad(prescription module) · Hemkesh(order/drone module)_
+SIS 2075 – Software Engineering 1 Mini Project
+Company: PharmaDrone
+Team: Ajlaan (pharmacy module), Irshaad (prescription module), Hemkesh (order/drone module)
 
-A console application, written in C, that simulates:
+## What this is
 
-1. **Uploading a prescription** (from a text file or typed in manually).
-2. **Searching pharmacies** for each medicine, showing price, stock, and drone ETA.
-3. **Choosing a pharmacy** per medicine.
-4. **Simulated drone dispatch** — the drone visits each chosen pharmacy, "picks up"
-   the item, then "delivers" everything, ending in an itemized receipt.
+A C console app for ordering prescription medicine and having it delivered by drone.
+You "upload" a prescription (either a text file or by typing the medicine names in),
+the program checks which pharmacies have each medicine in stock and at what price,
+you pick which pharmacy to buy from, and then it runs through a drone pickup and
+delivery sequence and prints a receipt at the end.
 
-This is a simulation: the pharmacy "database" is an in-memory hardcoded list
-(`src/pharmacy.c`), and the drone is a text animation. It's built so a real data
-source or dispatch API could later be swapped in without touching the other modules.
+The pharmacy stock is just a hardcoded list inside `pharmacy.c` for now — there's no
+real database or actual drone involved, it's all simulated for the purposes of this
+project.
 
----
-
-## 1. Project structure
+## Project layout
 
 ```
 pharmadrone/
-├── include/            Header files (.h) — one per module, the "contract" each
-│   ├── common.h         module exposes to the rest of the program
+├── include/
+│   ├── common.h         shared structs (Pharmacy, Medication, OrderItem) and constants
 │   ├── utils.h
 │   ├── pharmacy.h
 │   ├── prescription.h
 │   └── order.h
-├── src/                Implementation files (.c)
-│   ├── utils.c          shared helpers (string trimming, timing)
-│   ├── pharmacy.c        [Ajlaan] catalog & stock search
-│   ├── prescription.c    [Irshaad] prescription upload
-│   ├── order.c           [Hemkesh] pharmacy selection + drone dispatch
-│   └── main.c            integration: top-level menu, wires modules together
-├── tests/              Unit tests, one file per testable module
+├── src/
+│   ├── utils.c          string helpers, sleep timing for the drone animation
+│   ├── pharmacy.c       Ajlaan – pharmacy list, searching for medicine, stock levels
+│   ├── prescription.c   Irshaad – reading in the prescription (file or manual)
+│   ├── order.c          Hemkesh – picking a pharmacy per medicine, drone dispatch, receipt
+│   └── main.c           menu that calls into the three modules above
+├── tests/
 │   ├── test_pharmacy.c
 │   └── test_order.c
 ├── data/
 │   └── sample_prescription.txt
-├── Makefile
-├── .gitignore
-└── README.md
+└── .gitignore
 ```
 
-### Why it's split this way
+We split it up this way so each of us could work on our part separately —
+Ajlaan handles the pharmacy data and search, Irshaad handles getting the
+prescription into the program, Hemkesh handles the ordering and drone part.
+`main.c` doesn't really have any logic in it, it just ties the three pieces
+together once they're all working.
 
-The assignment requires the project to be broken into modules, each with its own
-`.h`/`.c` files, assigned to a different team member, and unit tested before
-integration. The three interactive modules map to the three team members:
+## Building and running
 
-| Module         | Files                                | Responsibility                                              |
-|----------------|---------------------------------------|---------------------------------------------------------------|
-| `pharmacy`     | `pharmacy.h` / `pharmacy.c`          | Pharmacy data, stock search, catalog printing                 |
-| `prescription` | `prescription.h` / `prescription.c`  | Getting the prescription into the program (file or manual)     |
-| `order`        | `order.h` / `order.c`                | Selecting a pharmacy per medicine, drone dispatch, receipt      |
-
-`common.h` and `utils.c`/`utils.h` are shared infrastructure (structs, constants,
-string helpers) that every module depends on. `main.c` contains no business
-logic — it only calls into the three modules, which is the "integration" step
-described in the brief.
-
----
-
-## 2. Building and running
-
-Requires `gcc` and `make`.
+No build system, just compile everything with one gcc command:
 
 ```bash
-make            # builds the ./pharmadrone executable
-./pharmadrone   # run it
+gcc -Wall -Wextra -std=c11 -Iinclude -o pharmadrone src/utils.c src/pharmacy.c src/prescription.c src/order.c src/main.c
 ```
 
+Then run it:
+
 ```bash
-make test       # builds and runs all unit tests
+./pharmadrone
 ```
 
+(On Windows the output file will need a `.exe` on the end, e.g. `-o pharmadrone.exe`.)
+
+### Running the tests
+
+Each module has its own small test file so we could check it worked before
+plugging it into the rest of the program. These build as separate mini-programs,
+not part of the main app:
+
 ```bash
-make clean      # removes all compiled binaries and object files
+gcc -Wall -Wextra -std=c11 -Iinclude -o test_pharmacy src/utils.c src/pharmacy.c tests/test_pharmacy.c
+./test_pharmacy
+
+gcc -Wall -Wextra -std=c11 -Iinclude -o test_order src/utils.c src/pharmacy.c src/prescription.c src/order.c tests/test_order.c
+./test_order
 ```
 
-### Testing modules independently before integration
+`test_pharmacy` only needs `utils.c` and `pharmacy.c` — it doesn't touch
+prescriptions or ordering at all, so we can test the pharmacy search logic
+completely on its own. `test_order` checks the total-cost calculation from
+the order module.
 
-`make test` builds two small standalone test executables:
+## How it actually works
 
-- `tests/test_pharmacy` links only `utils.c` + `pharmacy.c` — it tests the
-  pharmacy module completely on its own, with no dependency on prescription
-  handling, ordering, or the interactive menu.
-- `tests/test_order` links `utils.c` + `pharmacy.c` + `prescription.c` +
-  `order.c` and tests `order_calculate_total()` — the one piece of order logic
-  that's pure calculation rather than interactive I/O, so it can be tested
-  without simulating keyboard input.
+Run `./pharmadrone` and you get a menu:
 
-This mirrors the brief's description of unit testing each module before final
-integration: run `make test` after every change to a module, then only run the
-full interactive app (`make && ./pharmadrone`) once its tests pass.
+1. Upload prescription & order drone delivery
+2. Browse all pharmacies & stock
+3. Exit
 
----
+Option 1 asks how you want to give it your prescription — either point it at a
+text file (one medicine name per line, see `data/sample_prescription.txt`) or
+type the names in one by one. For each medicine it then lists every pharmacy
+that currently has it in stock along with the price and how far away the drone
+would need to fly. You pick a pharmacy (or skip that medicine), and once you've
+gone through the whole list it shows the total cost and asks you to confirm.
+Say yes and it plays out the drone flying to each pharmacy, picking things up,
+then delivering everything and printing a receipt.
 
-## 3. Git & GitHub workflow
+Option 2 just prints the full pharmacy list including anything that's out of
+stock, in case you want to see what's available before uploading anything.
 
-This section is both a **guide for the team** and the **basis for the Git/GitHub
-section of the report** — copy the relevant parts across and add your own
-screenshots/command history once you've actually done it.
+## Git workflow
 
-### 3.1 Initial setup (Joyven)
-
-```bash
-git init
-git add .
-git commit -m "Initial project scaffold"
-# Create an empty repo on GitHub, then:
-git remote add origin <your-repo-url>
-git branch -M main
-git push -u origin main
-```
-
-Add the other two members as collaborators on GitHub
-(**Settings → Collaborators**), or invite them if using a GitHub Organization.
-
-### 3.2 Everyone else: cloning
+We used a shared GitHub repo with one branch per person/module rather than
+everyone pushing straight to `main`:
 
 ```bash
-git clone <your-repo-url>
-cd pharmadrone
-```
-
-### 3.3 One feature branch per module, per member
-
-Rather than everyone committing straight to `main`, each member works on their
-own module in its own branch:
-
-```bash
-# Ajlaan
-git checkout -b feature/pharmacy-module
-# ... work on include/pharmacy.h and src/pharmacy.c ...
-git add include/pharmacy.h src/pharmacy.c
-git commit -m "Improve stock search to handle partial name matches"
+git clone <repo-url>
+git checkout -b feature/pharmacy-module      # or prescription-module / order-module
+# ... work, commit ...
 git push -u origin feature/pharmacy-module
-
-# Irshaad
-git checkout -b feature/prescription-module
-# ... work on prescription.h / prescription.c ...
-
-# Hemkesh
-git checkout -b feature/order-module
-# ... work on order.h / order.c ...
 ```
 
-On GitHub, open a **Pull Request** from each feature branch into `main`, have
-a teammate review it, then **Merge**. This is the collaboration model the
-brief specifically asks you to demonstrate — screenshot the PR list and at
-least one merged PR for the report.
+Each branch got merged into `main` through a Pull Request on GitHub once the
+module's tests passed, rather than merging locally.
 
-### 3.4 Demonstrating a merge conflict (bonus marks)
+Commands we used, and why:
 
-A good, easy way to generate and resolve a real conflict for the demo:
-
-```bash
-# Two members both edit the same line of README.md on different branches,
-# e.g. both update the "Team members" line at the top of this file.
-git checkout -b demo/conflict-a
-# edit README.md, commit, push
-git checkout main
-git checkout -b demo/conflict-b
-# edit the SAME line differently, commit, push
-git checkout main
-git merge demo/conflict-a      # merges cleanly
-git merge demo/conflict-b      # <-- conflicts here
-```
-
-Git will mark the conflicting section in the file with `<<<<<<<`, `=======`,
-`>>>>>>>`. Manually edit it to the resolved version, then:
-
-```bash
-git add README.md
-git commit -m "Resolve merge conflict in README team list"
-```
-
-Screenshot the conflict markers and the resolution for the report.
-
-### 3.5 Undoing commits (bonus marks)
-
-Two different tools for two different situations — useful to show you
-understand when to use each:
-
-```bash
-git revert <commit-hash>   # adds a NEW commit that undoes an old one.
-                           # Safe for commits already pushed/shared.
-
-git reset --soft HEAD~1   # moves the branch pointer back, keeps your changes
-                           # staged. Use only on commits nobody else has pulled.
-```
-
-### 3.6 Stashing (bonus marks)
-
-If you need to switch branches with unfinished work:
-
-```bash
-git stash                 # parks your uncommitted changes
-git checkout main
-# ... do something else ...
-git checkout feature/pharmacy-module
-git stash pop              # brings your changes back
-```
-
-### 3.7 Tagging a release (bonus marks)
-
-Mark a milestone (e.g. "first fully working integrated version") so it's easy
-to find or roll back to later:
-
-```bash
-git tag -a v1.0 -m "First fully integrated, tested version"
-git push origin v1.0
-```
-
-### 3.8 Visualising history for the demo
-
-```bash
-git log --oneline --graph --all
-```
-
-This prints a text graph of every branch and merge — screenshot it for the
-report, and show it live during the demo to narrate how the three modules'
-histories came together.
-
-### 3.9 Cloning on a second machine (to demonstrate distributed work)
-
-For the demo, it's worth actually showing this live if possible: have a
-second team member `git clone` the repo fresh on their own laptop and run
-`make && make test` to prove the project is fully portable and not dependent
-on one person's machine setup.
-
-### 3.10 Command reference table (fill in as you use them)
-
-| Command | What it does | How we used it |
+| Command | What it does | Where we used it |
 |---|---|---|
-| `git init` | Creates a new local repository | Set up the project at the start |
-| `git clone` | Copies a remote repo to a local machine | Each member got a local copy |
-| `git add` | Stages changes for the next commit | Before every commit |
-| `git commit -m` | Records staged changes with a message | After finishing a logical unit of work |
-| `git push` | Uploads local commits to GitHub | Sharing work with the team |
-| `git pull` | Downloads and merges remote changes | Before starting new work each day |
-| `git branch` | Lists / creates branches | One branch per module |
-| `git checkout -b` | Creates and switches to a new branch | Starting work on a module |
-| `git merge` | Combines one branch's history into another | Merging finished modules into `main` |
-| `git stash` | Temporarily shelves uncommitted changes | Switching branches mid-task |
-| `git revert` | Undoes a commit by adding a new inverse commit | Safely undoing a shared mistake |
-| `git reset` | Moves the branch pointer, optionally discarding changes | Cleaning up local-only commits |
-| `git tag` | Marks a specific commit as a named milestone | Marking `v0.1-scaffold`, `v1.0` |
-| `git log --graph` | Visualises commit/branch/merge history | Demo + report screenshots |
-| `.gitignore` | Excludes files from version control | Kept build artifacts (`*.o`, binaries) out of the repo |
+| `git init` / `git clone` | start a repo locally / copy an existing one | setting up the repo, each of us cloning it |
+| `git add`, `git commit -m` | stage and save changes | after finishing a piece of a module |
+| `git push`, `git pull` | sync with GitHub | sharing work, getting teammates' changes |
+| `git branch`, `git checkout -b` | create/switch branches | one branch per module |
+| `git merge` | combine branches | merging a finished module into `main` |
+| `git stash` | temporarily set aside uncommitted changes | switching branches mid-task without committing half-done work |
+| `git revert` | undo a commit by adding a new commit that reverses it | fixing a mistake that had already been pushed |
+| `git reset` | move the branch pointer back | cleaning up commits that hadn't been pushed yet |
+| `git tag` | mark a specific commit | tagging the first fully working version |
+| `git log --graph` | see branch/merge history as a diagram | checking how everything came together |
+| `.gitignore` | stop certain files from being tracked | kept compiled binaries and `.o` files out of the repo |
 
----
+We also deliberately caused and resolved a merge conflict (two of us editing
+the same line of this README on different branches at the same time) to
+practice resolving conflicts before it happened for real.
 
-## 4. Extending it further
+## Known limitations / things we'd add given more time
 
-Ideas worth mentioning as "future work" in the report:
-
-- Replace the hardcoded `pharmacy_init()` data with a CSV/text file read at
-  startup, so pharmacy stock can be updated without recompiling.
-- Add fuzzy matching to `pharmacy_find_matches()` so small typos still match.
-- Track dosage/quantity rather than just medicine names.
-- Enforce a payload-weight or controlled-substance restriction list before
-  a drone dispatch is allowed.
+- Pharmacy stock is hardcoded rather than read from a file or database
+- No fuzzy matching, so a typo in a medicine name won't match anything
+- Doesn't track dosage or quantity, just whether a medicine is in stock
+- No check for controlled substances or drone weight limits
