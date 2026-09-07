@@ -31,11 +31,11 @@ pharmadrone/
 │   ├── prescription.h
 │   └── order.h
 ├── src/
-│   ├── utils.c          string helpers, sleep timing for the drone animation
+│   ├── utils.c          Saad - string helpers, sleep timing for the drone animation
 │   ├── pharmacy.c       Ajlaan – pharmacy list, searching for medicine, stock levels
 │   ├── prescription.c   Irshaad – reading in the prescription (file or manual)
 │   ├── order.c          Hemkesh – picking a pharmacy per medicine, drone dispatch, receipt
-│   └── main.c           menu that calls into the three modules above
+│   └── main.c           Joyven - menu that calls into the three modules above
 ├── tests/
 │   ├── test_pharmacy.c
 │   └── test_order.c
