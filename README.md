@@ -40,8 +40,8 @@ pharmadrone/
 │   ├── test_pharmacy.c
 │   └── test_order.c
 ├── data/
-│   └── sample_prescription.txt
-└── .gitignore
+    └── sample_prescription.txt
+
 ```
 
 We split it up this way so each of us could work on our part separately —
