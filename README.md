@@ -4,9 +4,9 @@ SIS 2075 – Software Engineering 1 Mini Project
 
 Company: PharmaDrone
 
-Team: Ajlaan (pharmacy module), Irshaad (prescription module), Hemkesh (order/drone module), Saad (testing/handling merge conflicts)
+Team: Ajlaan (pharmacy module), Irshaad (prescription module), Hemkesh (order/drone module), Saad (testing/utilities files)
 
-Team Leader: Joyven (coordinating/main module/testing)
+Team Leader: Joyven (coordinating/main module/testing/merge conflicts)
 
 ## What this is
 
