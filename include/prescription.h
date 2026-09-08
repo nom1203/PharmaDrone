@@ -1,7 +1,7 @@
 /* ============================================================
    prescription.h
    ------------------------------------------------------------
-   Module owner: [Member B]
+   Module owner: [Irshaad]
 
    Responsible for getting the user's prescription into the
    program, either by reading a text file (one medicine name

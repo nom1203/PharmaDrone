@@ -1,6 +1,6 @@
 /* ============================================================
    order.c
-   Module owner: [Member C]
+   Module owner: [Hemkesh]
 
    Implements the order-building flow (search pharmacies for
    each prescribed medicine, let the user pick one) and the
@@ -16,6 +16,9 @@
 #include "../include/prescription.h"
 #include "../include/utils.h"
 
+/* Adds up the price of every item in the order.
+   Kept separate from the rest so it can be unit tested on its
+   own, without needing to simulate keyboard input. */
 float order_calculate_total(const OrderItem orders[], int count) {
     float total = 0.0f;
     for (int i = 0; i < count; i++) {
@@ -24,7 +27,9 @@ float order_calculate_total(const OrderItem orders[], int count) {
     return total;
 }
 
-/* Internal helper: draws one 0-100% progress bar for the drone animation. */
+/* Draws one "[####    ] 40%" progress bar animation.
+   \r moves the cursor back to the start of the line so each
+   frame overwrites the last one instead of printing new lines. */
 static void printProgressBar(void) {
     for (int bar = 0; bar <= 10; bar++) {
         printf("\r  [");
@@ -36,6 +41,8 @@ static void printProgressBar(void) {
     printf("\n");
 }
 
+/* Plays out the drone delivery animation for a confirmed order,
+   then prints a receipt. */
 void order_dispatch_drone(OrderItem orders[], int orderCount, float totalCost) {
     util_print_divider();
     printf("DRONE DISPATCH\n");
@@ -49,6 +56,8 @@ void order_dispatch_drone(OrderItem orders[], int orderCount, float totalCost) {
     printf("Order confirmed. Preparing drone for pickup...\n");
     util_sleep_tenths(8);
 
+    /* Track which pharmacies we've already visited, so if two
+       medicines came from the same pharmacy we only fly there once. */
     int visited[MAX_PHARMACIES];
     int visitedCount = 0;
 
@@ -67,6 +76,8 @@ void order_dispatch_drone(OrderItem orders[], int orderCount, float totalCost) {
         printProgressBar();
         printf("[Drone] Arrived at %s.\n", ph->name);
 
+        /* Pick up every item that came from this pharmacy,
+           not just the current one. */
         for (int i2 = 0; i2 < orderCount; i2++) {
             if (orders[i2].pharmacyIndex == p) {
                 printf("  -> Picking up %s ($%.2f)\n", orders[i2].medicineName, orders[i2].price);
@@ -94,6 +105,9 @@ void order_dispatch_drone(OrderItem orders[], int orderCount, float totalCost) {
     util_print_divider();
 }
 
+/* Main entry point, called from main.c's menu.
+   Uploads the prescription, lets the user pick a pharmacy for
+   each medicine, then confirms and dispatches the drone. */
 void order_run_flow(void) {
     char prescriptionItems[MAX_PRESCRIPTION_ITEMS][MAX_NAME_LEN];
     int  itemCount = prescription_upload(prescriptionItems);
@@ -106,11 +120,14 @@ void order_run_flow(void) {
     OrderItem orders[MAX_PRESCRIPTION_ITEMS];
     int       orderCount = 0;
 
+    /* One loop per medicine on the prescription. */
     for (int i = 0; i < itemCount; i++) {
         util_print_divider();
         printf("Searching pharmacies for: %s\n", prescriptionItems[i]);
         util_print_divider();
 
+        /* Ask the pharmacy module which pharmacies have this
+           medicine in stock. */
         int matchIndices[MAX_MATCHES];
         int matchCount = pharmacy_find_matches(prescriptionItems[i], matchIndices);
 
@@ -118,7 +135,8 @@ void order_run_flow(void) {
             printf("  No pharmacy currently has \"%s\" in stock. Skipping.\n\n", prescriptionItems[i]);
             continue;
         }
-
+        
+        /* Print a table of matching pharmacies with price/stock/ETA. */
         printf("  %-3s %-22s %-24s %8s %7s %8s\n",
                "#", "Pharmacy", "Address", "Price", "Stock", "ETA(min)");
         for (int m = 0; m < matchCount; m++) {
@@ -140,7 +158,9 @@ void order_run_flow(void) {
             printf("  Skipped %s.\n\n", prescriptionItems[i]);
             continue;
         }
-
+        
+        /* Look up the exact price at the chosen pharmacy and add
+           it to the order. */
         int chosenPharmacy = matchIndices[choice - 1];
         Medication med;
         if (pharmacy_get_medication(chosenPharmacy, prescriptionItems[i], &med)) {

@@ -1,7 +1,7 @@
 /* ============================================================
    pharmacy.h
    ------------------------------------------------------------
-   Module owner: [Member A]
+   Module owner: [Ajlaan]
 
    Responsible for the pharmacy "database" (in-memory for this
    version) and everything related to searching it: which
