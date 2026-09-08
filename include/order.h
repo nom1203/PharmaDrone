@@ -1,7 +1,7 @@
 /* ============================================================
    order.h
    ------------------------------------------------------------
-   Module owner: [Member C]
+   Module owner: [Hemkesh]
 
    Ties the prescription and pharmacy modules together: for
    each medicine on the prescription, lets the user pick a

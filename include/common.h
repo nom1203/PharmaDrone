@@ -3,8 +3,6 @@
    ------------------------------------------------------------
    Shared constants and data structures used across every
    module (pharmacy, prescription, order/drone, main).
-   Keeping these in one header means every module agrees on the
-   same definitions -- this is the "contract" between modules.
    ============================================================ */
 
 #ifndef COMMON_H

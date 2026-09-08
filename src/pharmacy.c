@@ -2,12 +2,10 @@
    pharmacy.c
    Module owner: [Member A]
 
-   Implements the pharmacy catalog and search logic. The data
-   here is hardcoded for this version of the project, but every
-   other module only ever talks to it through the functions
-   declared in pharmacy.h -- so this file could later be
-   rewritten to load from a database or file without any other
-   module needing to change.
+   Holds the pharmacy catalog and handles searching it. The data
+   is hardcoded for now, but everything goes through the
+   functions in pharmacy.h, so this could later be swapped to
+   read from a file or database without changing other modules.
    ============================================================ */
 
 #include <string.h>
@@ -19,7 +17,8 @@
 static Pharmacy pharmacies[MAX_PHARMACIES];
 static int      pharmacyCount = 0;
 
-/* Internal helper: appends one medicine entry to a pharmacy record. */
+ 
+/* Adds one medicine entry to a pharmacy's medicine list. */
 static void addMed(Pharmacy *p, const char *name, float price, int stock) {
     if (p->medCount >= MAX_MEDS_PER_PHARMACY) return;
     strncpy(p->meds[p->medCount].name, name, MAX_NAME_LEN - 1);
@@ -28,7 +27,9 @@ static void addMed(Pharmacy *p, const char *name, float price, int stock) {
     p->meds[p->medCount].stock = stock;
     p->medCount++;
 }
-
+ 
+/* Fills the pharmacy list with sample data. Must be called once
+   before any other pharmacy_* function is used. */
 void pharmacy_init(void) {
     pharmacyCount = 0;
 
@@ -82,16 +83,22 @@ void pharmacy_init(void) {
     addMed(&pharmacies[pharmacyCount], "Cetirizine",  2.95, 60);
     pharmacyCount++;
 }
-
+ 
+/* Returns how many pharmacies are in the catalog. */
 int pharmacy_get_count(void) {
     return pharmacyCount;
 }
-
+ 
+/* Returns a pointer to the pharmacy at this index, or NULL if
+   the index is out of range. */
 const Pharmacy *pharmacy_get(int index) {
     if (index < 0 || index >= pharmacyCount) return NULL;
     return &pharmacies[index];
 }
-
+ 
+/* Finds every pharmacy that has medName in stock (case-insensitive).
+   Fills matchIndices[] with their indices and returns how many
+   matches were found. Pharmacies with 0 stock are skipped. */
 int pharmacy_find_matches(const char *medName, int matchIndices[]) {
     char medLower[MAX_NAME_LEN];
     util_to_lower(medName, medLower);
@@ -109,7 +116,10 @@ int pharmacy_find_matches(const char *medName, int matchIndices[]) {
     }
     return matches;
 }
-
+ 
+/* Looks up medName at the given pharmacy (case-insensitive).
+   If found, copies its price/stock into *out and returns 1.
+   Otherwise returns 0. */
 int pharmacy_get_medication(int pharmacyIndex, const char *medName, Medication *out) {
     if (pharmacyIndex < 0 || pharmacyIndex >= pharmacyCount) return 0;
 
@@ -127,7 +137,9 @@ int pharmacy_get_medication(int pharmacyIndex, const char *medName, Medication *
     }
     return 0;
 }
-
+ 
+/* Prints every pharmacy and its full medicine list, including
+   anything that's out of stock. */
 void pharmacy_print_catalog(void) {
     util_print_divider();
     printf("ALL PHARMACIES & STOCK\n");

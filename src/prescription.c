@@ -1,11 +1,10 @@
 /* ============================================================
    prescription.c
    Module owner: [Member B]
-
-   Implements prescription capture: either loading medicine
-   names from a text file the user points to, or typing them in
-   directly. Falls back to manual entry if the given file can't
-   be opened.
+ 
+   Gets the prescription into the program -- either by reading
+   a text file (one medicine per line) or by manual entry.
+   Falls back to manual entry if the file can't be opened.
    ============================================================ */
 
 #include <stdio.h>
@@ -13,10 +12,10 @@
 
 #include "../include/prescription.h"
 #include "../include/utils.h"
-
-/* Internal helper: manual keyboard entry of medicine names.
-   Shared by the "manual entry" menu choice and the fallback
-   path when a given file can't be opened. */
+ 
+/* Lets the user type medicine names in one at a time until they
+   type 'done' or hit the item limit. Used both for manual entry
+   and as a fallback if a prescription file can't be opened. */
 static int manualEntry(char items[][MAX_NAME_LEN]) {
     int count = 0;
 
@@ -40,7 +39,10 @@ static int manualEntry(char items[][MAX_NAME_LEN]) {
     printf("\nPrescription captured: %d medication(s).\n\n", count);
     return count;
 }
-
+ 
+/* Asks the user how they want to give their prescription, then
+   reads it in and stores the medicine names into items[].
+   Returns how many medicines were captured. */
 int prescription_upload(char items[][MAX_NAME_LEN]) {
     char choice[8];
 
@@ -63,10 +65,14 @@ int prescription_upload(char items[][MAX_NAME_LEN]) {
 
         FILE *fp = fopen(path, "r");
         if (!fp) {
+            /* Bad path or unreadable file -- don't dead-end the
+               user, just drop them into manual entry instead. */
             printf("\nCould not open file \"%s\". Falling back to manual entry.\n", path);
             return manualEntry(items);
         }
-
+ 
+        /* Read one medicine name per line until the file ends or
+           we hit the max number of items we can store. */
         int count = 0;
         char line[MAX_NAME_LEN];
         while (fgets(line, sizeof(line), fp) && count < MAX_PRESCRIPTION_ITEMS) {

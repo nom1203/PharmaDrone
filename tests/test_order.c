@@ -2,10 +2,9 @@
    test_order.c
    ------------------------------------------------------------
    Unit tests for the order module. order_run_flow() and
-   order_dispatch_drone() are interactive/console-driven, so
-   they aren't unit tested directly here -- instead we test
-   order_calculate_total(), the pure logic extracted specifically
-   so it CAN be tested without simulating keyboard input.
+   order_dispatch_drone() are interactive, so instead we test
+   order_calculate_total() -- the pure logic that doesn't need
+   any simulated keyboard input.
    ============================================================ */
 
 #include <assert.h>
@@ -13,7 +12,8 @@
 #include <string.h>
 
 #include "../include/order.h"
-
+ 
+/* Two items should add up to their combined price. */
 static void test_total_of_multiple_items(void) {
     OrderItem orders[2];
 
@@ -29,14 +29,16 @@ static void test_total_of_multiple_items(void) {
     assert(total > 11.79f && total < 11.81f);
     printf("  [OK] order_calculate_total sums multiple items correctly\n");
 }
-
+ 
+/* An empty order should total $0.00, not crash or return garbage. */
 static void test_total_of_zero_items(void) {
     OrderItem orders[1] = { {"", 0, 0.0f} };
     float total = order_calculate_total(orders, 0);
     assert(total == 0.0f);
     printf("  [OK] order_calculate_total returns 0 for an empty order\n");
 }
-
+ 
+/* A single item should just return its own price. */
 static void test_total_of_single_item(void) {
     OrderItem orders[1];
     strcpy(orders[0].medicineName, "Ibuprofen");

@@ -3,12 +3,8 @@
    ------------------------------------------------------------
    Shared / integration file (all team members).
 
-   This file contains no business logic of its own -- it only
-   initialises the pharmacy module and drives the top-level
-   menu, delegating each option to the relevant module. This is
-   the "integration" step described in the assignment brief:
-   each module is developed and unit tested independently, then
-   wired together here.
+    just sets up the pharmacy data and runs the main menu,
+    calling into the pharmacy and order modules for the actual work.
    ============================================================ */
 
 #include <stdio.h>
@@ -18,6 +14,7 @@
 #include "../include/order.h"
 #include "../include/utils.h"
 
+/* Prints the title banner shown once at startup. */
 static void printBanner(void) {
     printf("============================================================\n");
     printf("           PharmaDrone - Prescription Delivery              \n");
@@ -25,7 +22,7 @@ static void printBanner(void) {
 }
 
 int main(void) {
-    pharmacy_init();
+    pharmacy_init(); /* load the pharmacy catalog before anything else runs */
     printBanner();
 
     int running = 1;
