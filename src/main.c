@@ -22,7 +22,13 @@ static void printBanner(void) {
 }
 
 int main(void) {
-    pharmacy_init(); /* load the pharmacy catalog before anything else runs */
+    /* Try loading the pharmacy catalog from CSV first; if it's
+       missing or empty, fall back to the built-in sample data so
+       the app still runs out of the box. */
+    if (!pharmacy_load_from_csv("data/pharmacies.csv")) {
+        printf("(No data/pharmacies.csv found -- using built-in sample data.)\n");
+        pharmacy_init();
+    }
     printBanner();
 
     int running = 1;
