@@ -1,148 +1,264 @@
 # PharmaDrone
 
-SIS 2075 – Software Engineering 1 Mini Project
+## Collaborators
 
-Company: PharmaDrone
+- Ajlaan
+- Irshaad
+- Hemkesh
+- Saad
+- Joyven
 
-Team: Ajlaan (pharmacy module), Irshaad (prescription module), Hemkesh (order/drone module), Saad (testing/utilities files)
+PharmaDrone is a small C-based prescription-ordering project that simulates finding medicines across multiple pharmacies, choosing the best supplier for each item, and dispatching a drone to collect and deliver the order.
 
-Team Leader: Joyven (coordinating/main module/testing/merge conflicts)
+The repository contains both:
+- a terminal-based application for interactive prescription ordering
+- a lightweight local web UI served by a CivetWeb HTTP server
+- CSV-backed pharmacy data and module-level unit tests
 
-## What this is
+---
 
-A C console app for ordering prescription medicine and having it delivered by drone.
-You "upload" a prescription (either a text file or by typing the medicine names in),
-the program checks which pharmacies have each medicine in stock and at what price,
-you pick which pharmacy to buy from, and then it runs through a drone pickup and
-delivery sequence and prints a receipt at the end.
+## What the project does
 
-The pharmacy stock is just a hardcoded list inside `pharmacy.c` for now — there's no
-real database or actual drone involved, it's all simulated for the purposes of this
-project.
+The app lets a user:
+- load a prescription from a text file or enter medication names manually
+- search the pharmacy catalog for in-stock options by medicine name
+- compare prices, stock, and ETA (simulated drone travel time)
+- select a pharmacy for each item in the prescription
+- confirm the order and simulate a drone delivery flow
+- view a receipt with the total cost
 
-## Project layout
+The project is intentionally a simulation: it does not connect to a real database or a real drone, but it does model the decision-making and flow of a pharmacy ordering system.
 
-```
-pharmadrone/
+---
+
+## Repository structure
+
+```text
+PharmaDrone/
+├── README.md
+├── Assignment2026.pdf
+├── pharmadrone.exe
+├── pharmacdrone-server.exe
+├── data/
+│   ├── pharmacies.csv
+│   └── sample_prescription.txt
 ├── include/
-│   ├── common.h         shared structs (Pharmacy, Medication, OrderItem) and constants
-│   ├── utils.h
+│   ├── common.h
+│   ├── order.h
 │   ├── pharmacy.h
 │   ├── prescription.h
-│   └── order.h
+│   └── utils.h
 ├── src/
-│   ├── utils.c          Saad - string helpers, sleep timing for the drone animation
-│   ├── pharmacy.c       Ajlaan – pharmacy list, searching for medicine, stock levels
-│   ├── prescription.c   Irshaad – reading in the prescription (file or manual)
-│   ├── order.c          Hemkesh – picking a pharmacy per medicine, drone dispatch, receipt
-│   └── main.c           Joyven - menu that calls into the three modules above
+│   ├── main.c
+│   ├── order.c
+│   ├── pharmacy.c
+│   ├── prescription.c
+│   ├── server.c
+│   └── utils.c
 ├── tests/
-│   ├── test_pharmacy.c
-│   └── test_order.c
-├── data/
-    └── sample_prescription.txt
-
+│   ├── test_order.c
+│   └── test_pharmacy.c
+├── vendor/
+│   ├── civetweb.h
+│   └── libcivetweb.a
+└── web/
+    ├── app.js
+    ├── index.html
+    └── style.css
 ```
 
-We split it up this way so each of us could work on our part separately —
-Ajlaan handles the pharmacy data and search, Irshaad handles getting the
-prescription into the program, Hemkesh handles the ordering and drone part.
-`main.c` doesn't really have any logic in it, it just ties the three pieces
-together once they're all working.
+---
 
-## Building and running
+## Core modules
 
-No build system, just compile everything with one gcc command:
+### `include/common.h`
+Defines shared constants and core data structures:
+- `Pharmacy`
+- `Medication`
+- `OrderItem`
+- maximum counts for pharmacies, medicines, and prescription items
 
-```bash
-gcc -Wall -Wextra -std=c11 -Iinclude -o pharmadrone src/utils.c src/pharmacy.c src/prescription.c src/order.c src/main.c
+### `include/pharmacy.h`
+Provides the catalog API:
+- initialize built-in pharmacy data
+- load pharmacy records from CSV
+- save the catalog back to CSV
+- get pharmacy records by index
+- search for medicines by name
+- find matching pharmacies with stock available
+- print the full catalog
+
+### `include/prescription.h`
+Handles prescription intake:
+- file-based upload
+- manual keyboard entry
+- storing medicines into the order workflow
+
+### `include/order.h`
+Coordinates the order pipeline:
+- full interactive order flow
+- total price calculation
+- drone dispatch simulation and receipt output
+
+### `include/utils.h`
+Housekeeping helpers used throughout the project:
+- trim strings
+- lowercase conversion
+- timing for animation
+- output dividers
+
+### `src/server.c`
+Runs a tiny HTTP server using CivetWeb and exposes the pharmacy catalog and medicine match API to the browser UI:
+- `GET /api/pharmacies`
+- `GET /api/match?med=...`
+
+### `web/*.html/js/css`
+A simple browser dashboard with:
+- a pharmacy catalog tab
+- a prescription selection flow
+- one-click medicine match selection
+- drone dispatch animation
+- order receipt display
+
+---
+
+## Pharmacy dataset and sample data
+
+The catalog is initialized in `src/pharmacy.c` and a CSV file is also included in `data/pharmacies.csv`.
+
+The CSV fields are:
+
+```text
+pharmacy_name,address,eta_minutes,medicine_name,price,stock
 ```
 
-Then run it:
+The default catalog includes several sample pharmacies and medicines such as:
+- GreenLeaf Pharmacy
+- CarePlus Chemist
+- MediWell Pharmacy
+- HealthHub Pharmacy
+- QuickCare Drugstore
+
+Sample prescription input is provided in `data/sample_prescription.txt`:
+
+```text
+Paracetamol
+Cetirizine
+```
+
+---
+
+## How the console app works
+
+Run the main application:
 
 ```bash
 ./pharmadrone
 ```
 
-(On Windows the output file will need a `.exe` on the end, e.g. `-o pharmadrone.exe`.)
-
-### Running the tests
-
-Each module has its own small test file so we could check it worked before
-plugging it into the rest of the program. These build as separate mini-programs,
-not part of the main app:
-
-```bash
-gcc -Wall -Wextra -std=c11 -Iinclude -o test_pharmacy src/utils.c src/pharmacy.c tests/test_pharmacy.c
-./test_pharmacy
-
-gcc -Wall -Wextra -std=c11 -Iinclude -o test_order src/utils.c src/pharmacy.c src/prescription.c src/order.c tests/test_order.c
-./test_order
-```
-
-`test_pharmacy` only needs `utils.c` and `pharmacy.c` — it doesn't touch
-prescriptions or ordering at all, so we can test the pharmacy search logic
-completely on its own. `test_order` checks the total-cost calculation from
-the order module.
-
-## How it actually works
-
-Run `./pharmadrone` and you get a menu:
-
+The menu includes:
 1. Upload prescription & order drone delivery
 2. Browse all pharmacies & stock
 3. Exit
 
-Option 1 asks how you want to give it your prescription — either point it at a
-text file (one medicine name per line, see `data/sample_prescription.txt`) or
-type the names in one by one. For each medicine it then lists every pharmacy
-that currently has it in stock along with the price and how far away the drone
-would need to fly. You pick a pharmacy (or skip that medicine), and once you've
-gone through the whole list it shows the total cost and asks you to confirm.
-Say yes and it plays out the drone flying to each pharmacy, picking things up,
-then delivering everything and printing a receipt.
+The workflow is:
+1. load a prescription from a file or type medicines manually
+2. search each medicine across the pharmacy catalog
+3. list matching pharmacies with price, stock, and ETA
+4. choose a pharmacy for each medicine to include in the order
+5. confirm the order
+6. simulate a drone visiting each pharmacy and collecting items
+7. print a summary receipt with the total cost
 
-Option 2 just prints the full pharmacy list including anything that's out of
-stock, in case you want to see what's available before uploading anything.
+---
 
-## Git workflow
+## Browser app
 
-We used a shared GitHub repo with one branch per person/module rather than
-everyone pushing straight to `main`:
+The repository also includes a browser-based UI served locally.
+
+Start the local web server:
 
 ```bash
-git clone <repo-url>
-git checkout -b feature/pharmacy-module      # or prescription-module / order-module
-# ... work, commit ...
-git push -u origin feature/pharmacy-module
+gcc -Wall -Wextra -std=c11 -Iinclude -Ivendor -o pharmacdrone-server src/utils.c src/pharmacy.c src/server.c vendor/libcivetweb.a
+./pharmacdrone-server
 ```
 
-Each branch got merged into `main` through a Pull Request on GitHub once the
-module's tests passed, rather than merging locally.
+Then open:
 
-Commands we used, and why:
+```text
+http://localhost:8080
+```
 
-| Command | What it does | Where we used it |
-|---|---|---|
-| `git init` / `git clone` | start a repo locally / copy an existing one | setting up the repo, each of us cloning it |
-| `git add`, `git commit -m` | stage and save changes | after finishing a piece of a module |
-| `git push`, `git pull` | sync with GitHub | sharing work, getting teammates' changes |
-| `git branch`, `git checkout -b` | create/switch branches | one branch per module |
-| `git merge` | combine branches | merging a finished module into `main` |
-| `git stash` | temporarily set aside uncommitted changes | switching branches mid-task without committing half-done work |
-| `git revert` | undo a commit by adding a new commit that reverses it | fixing a mistake that had already been pushed |
-| `git reset` | move the branch pointer back | cleaning up commits that hadn't been pushed yet |
-| `git tag` | mark a specific commit | tagging the first fully working version |
-| `git log --graph` | see branch/merge history as a diagram | checking how everything came together |
-| `.gitignore` | stop certain files from being tracked | kept compiled binaries and `.o` files out of the repo |
+This UI uses the same underlying pharmacy logic and lets you:
+- browse the catalog
+- select medicines and matching pharmacies
+- trigger a visual drone dispatch animation
+- view an order summary
 
-We also deliberately caused and resolved a merge conflict (two of us editing
-the same line of this README on different branches at the same time) to
-practice resolving conflicts before it happened for real.
+---
 
-## Known limitations / things we'd add given more time
+## Building the C application
 
-- Pharmacy stock is hardcoded rather than read from a file or database
-- No fuzzy matching, so a typo in a medicine name won't match anything
-- Doesn't track dosage or quantity, just whether a medicine is in stock
-- No check for controlled substances or drone weight limits
+Compile the main CLI:
+
+```bash
+gcc -Wall -Wextra -std=c11 -Iinclude -o pharmadrone src/utils.c src/pharmacy.c src/prescription.c src/order.c src/main.c
+```
+
+On Windows, use an `.exe` output name if needed:
+
+```bash
+gcc -Wall -Wextra -std=c11 -Iinclude -o pharmadrone.exe src/utils.c src/pharmacy.c src/prescription.c src/order.c src/main.c
+```
+
+---
+
+## Running the tests
+
+The project includes small unit tests for the pharmacy and order modules.
+
+### Pharmacy tests
+
+```bash
+gcc -Wall -Wextra -std=c11 -Iinclude -o test_pharmacy src/utils.c src/pharmacy.c tests/test_pharmacy.c
+./test_pharmacy
+```
+
+### Order tests
+
+```bash
+gcc -Wall -Wextra -std=c11 -Iinclude -o test_order src/utils.c src/pharmacy.c src/prescription.c src/order.c tests/test_order.c
+./test_order
+```
+
+These tests validate:
+- pharmacy initialization and bounds checks
+- case-insensitive medicine matching
+- exclusion of out-of-stock pharmacies
+- correct total price calculations
+
+---
+
+## Notes on the implementation
+
+This is a learning project and a simulation, not a production pharmacy system. Some intentional limitations are:
+- stock is stored in memory and CSV files, not a real database
+- medicine matching is exact and case-insensitive, not fuzzy
+- there is no dosage/quantity tracking beyond the stock count
+- no real delivery logistics, authentication, or payment flow is implemented
+- the drone dispatch is a visual simulation
+
+---
+
+## Summary
+
+PharmaDrone combines:
+- a pharmacy catalog
+- prescription intake
+- search and selection logic
+- cost calculation
+- a drone simulation
+- a local browser frontend
+- unit tests for the core business logic
+
+It is a good example of a small systems-style C project with modular design, shared header files, data-driven catalog loading, and a simple web layer on top of the same C backend logic.
