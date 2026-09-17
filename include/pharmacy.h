@@ -18,6 +18,26 @@
    Must be called once before any other pharmacy_* function. */
 void pharmacy_init(void);
 
+/* Loads the pharmacy list from a CSV file, replacing whatever is
+   currently in memory. Expected format (one line per medicine,
+   with a header row that gets skipped):
+
+       pharmacy_name,address,eta_minutes,medicine_name,price,stock
+
+   Rows sharing the same pharmacy_name are grouped into a single
+   Pharmacy entry. Returns 1 on success (file opened and at least
+   one pharmacy loaded), or 0 if the file couldn't be opened or no
+   valid rows were found -- in which case the in-memory list is
+   left empty and the caller should fall back to pharmacy_init(). */
+int pharmacy_load_from_csv(const char *filename);
+
+/* Writes the current in-memory pharmacy list out to a CSV file in
+   the same format read by pharmacy_load_from_csv(), one row per
+   medicine (a pharmacy with no medicines is not written at all).
+   Returns 1 on success, 0 if the file couldn't be opened for
+   writing. */
+int pharmacy_save_to_csv(const char *filename);
+
 /* Returns how many pharmacies currently exist in the catalog. */
 int pharmacy_get_count(void);
 

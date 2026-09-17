@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>PharmaDrone</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>PharmaDrone</h1>
+    <nav>
+      <button class="tab active" data-tab="order">Order</button>
+      <button class="tab"        data-tab="catalog">Pharmacies</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ORDER TAB -->
+    <section id="order" class="page active">
+      <h2>1. Prescription</h2>
+      <div class="row">
+        <input type="file" id="fileInput" accept=".txt" />
+        <span class="muted">one medicine per line</span>
+      </div>
+      <textarea id="manual" rows="4"
+        placeholder="Or type medicine names, one per line…"></textarea>
+      <button id="addMeds" class="primary">Add medicines</button>
+
+      <h2>2. Choose a pharmacy per medicine</h2>
+      <div id="selectionList" class="list"></div>
+
+      <h2>3. Dispatch</h2>
+      <div id="dispatchBox">
+        <button id="dispatch" class="primary" disabled>Dispatch drone</button>
+        <div id="droneArea" class="drone-area"></div>
+        <div id="receipt" class="receipt"></div>
+      </div>
+    </section>
+
+    <!-- CATALOG TAB -->
+    <section id="catalog" class="page">
+      <h2>All pharmacies &amp; stock</h2>
+      <div id="catalogList" class="list"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 /* ============================================================
    pharmacy.c
-   Module owner: [Member A]
+   Module owner: [Ajlaan]
 
    Holds the pharmacy catalog and handles searching it. The data
    is hardcoded for now, but everything goes through the
@@ -10,9 +10,13 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "../include/pharmacy.h"
 #include "../include/utils.h"
+
+#define CSV_LINE_LEN 512
+#define CSV_FIELDS   6
 
 static Pharmacy pharmacies[MAX_PHARMACIES];
 static int      pharmacyCount = 0;
@@ -26,6 +30,40 @@ static void addMed(Pharmacy *p, const char *name, float price, int stock) {
     p->meds[p->medCount].price = price;
     p->meds[p->medCount].stock = stock;
     p->medCount++;
+}
+
+/* Splits a CSV line into up to maxFields comma-separated fields,
+   trimming whitespace from each one. Modifies line in place and
+   points fields[] into it. Returns the number of fields found.
+   Doesn't handle quoted commas -- not needed for this dataset. */
+static int splitCsvLine(char *line, char *fields[], int maxFields) {
+    int count = 0;
+    char *token = strtok(line, ",");
+    while (token != NULL && count < maxFields) {
+        util_trim(token);
+        fields[count++] = token;
+        token = strtok(NULL, ",");
+    }
+    return count;
+}
+
+/* Finds a pharmacy by name in the in-memory list, or creates a
+   new one (initialised from name/address/eta) if it isn't there
+   yet. Returns its index, or -1 if the catalog is already full. */
+static int findOrAddPharmacy(const char *name, const char *address, double etaMinutes) {
+    for (int i = 0; i < pharmacyCount; i++) {
+        if (strcmp(pharmacies[i].name, name) == 0) return i;
+    }
+    if (pharmacyCount >= MAX_PHARMACIES) return -1;
+
+    int idx = pharmacyCount++;
+    strncpy(pharmacies[idx].name, name, MAX_NAME_LEN - 1);
+    pharmacies[idx].name[MAX_NAME_LEN - 1] = '\0';
+    strncpy(pharmacies[idx].address, address, MAX_ADDR_LEN - 1);
+    pharmacies[idx].address[MAX_ADDR_LEN - 1] = '\0';
+    pharmacies[idx].etaMinutes = etaMinutes;
+    pharmacies[idx].medCount = 0;
+    return idx;
 }
  
 /* Fills the pharmacy list with sample data. Must be called once
@@ -156,4 +194,74 @@ void pharmacy_print_catalog(void) {
         }
         printf("\n");
     }
+}
+
+/* Loads the pharmacy list from a CSV file (see pharmacy.h for the
+   expected column layout), replacing whatever is currently in
+   memory. Returns 1 on success, 0 if the file couldn't be opened
+   or no valid rows were found. */
+int pharmacy_load_from_csv(const char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (!fp) return 0;
+
+    pharmacyCount = 0;
+
+    char line[CSV_LINE_LEN];
+    int  lineNo = 0;
+
+    while (fgets(line, sizeof(line), fp)) {
+        lineNo++;
+        util_trim(line);
+
+        if (line[0] == '\0') continue;   /* skip blank lines */
+        if (lineNo == 1) continue;       /* skip the header row */
+
+        char *fields[CSV_FIELDS];
+        int   n = splitCsvLine(line, fields, CSV_FIELDS);
+        if (n < CSV_FIELDS) {
+            fprintf(stderr, "pharmacy_load_from_csv: skipping malformed line %d\n", lineNo);
+            continue;
+        }
+
+        const char *pharmacyName = fields[0];
+        const char *address      = fields[1];
+        double      etaMinutes   = atof(fields[2]);
+        const char *medName      = fields[3];
+        float       price        = (float)atof(fields[4]);
+        int         stock        = atoi(fields[5]);
+
+        int idx = findOrAddPharmacy(pharmacyName, address, etaMinutes);
+        if (idx == -1) {
+            fprintf(stderr, "pharmacy_load_from_csv: too many pharmacies, skipping '%s'\n", pharmacyName);
+            continue;
+        }
+        addMed(&pharmacies[idx], medName, price, stock);
+    }
+
+    fclose(fp);
+    return pharmacyCount > 0;
+}
+
+/* Writes the current in-memory pharmacy list to a CSV file, one
+   row per medicine, in the format read by pharmacy_load_from_csv().
+   Returns 1 on success, 0 if the file couldn't be opened. */
+int pharmacy_save_to_csv(const char *filename) {
+    FILE *fp = fopen(filename, "w");
+    if (!fp) return 0;
+
+    fprintf(fp, "pharmacy_name,address,eta_minutes,medicine_name,price,stock\n");
+    for (int p = 0; p < pharmacyCount; p++) {
+        for (int m = 0; m < pharmacies[p].medCount; m++) {
+            fprintf(fp, "%s,%s,%.1f,%s,%.2f,%d\n",
+                    pharmacies[p].name,
+                    pharmacies[p].address,
+                    pharmacies[p].etaMinutes,
+                    pharmacies[p].meds[m].name,
+                    pharmacies[p].meds[m].price,
+                    pharmacies[p].meds[m].stock);
+        }
+    }
+
+    fclose(fp);
+    return 1;
 }
